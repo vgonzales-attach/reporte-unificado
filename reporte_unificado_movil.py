@@ -2,6 +2,7 @@ import os.path
 import pandas as pd 
 import numpy as np
 from datetime import datetime
+import xlsxwriter
 """
 import datatable as dt
 https://datatable.readthedocs.io/en/latest/quick-start.html
@@ -24,6 +25,10 @@ else:
 print(type(rp))
 """
 
+shape_before_transformation = []
+shape_current_month = []
+shape_after_transformation = []
+
 class ReporteUM:
     def __init__(self):
         self.today = datetime.today().strftime('%Y-%m-%d')
@@ -37,8 +42,17 @@ class ReporteUM:
             self.rp = self.rp.reset_index()
             print("xlsx imported as rp")
             print(type(self.rp))
+            shape_before_transformation = self.rp.shape
+            print('before transformation: ', shape_before_transformation)
         else:
             print("no data file in root.")
+        
+
+    def keep_month(self, mo):
+        filter = self.rp["fec_registro"].dt.month.isin([mo])
+        self.rp = self.rp[filter]
+        shape_current_month = self.rp.shape
+        print('current month:', shape_current_month)
 
     def transform(self):
         self.rp["id_pedido"] = self.rp["id_pedido"].astype(str)
@@ -55,64 +69,58 @@ class ReporteUM:
         rgx = r'\D'
         filter = self.rpm['id_pedido'].str.contains(rgx)
         self.rpm = self.rpm[~filter]
-    
-    def export(self):
-        self.rpm.to_excel(self.output, index=False)
+        shape_after_transformation = self.rpm.shape
+        print('after transformation: ', shape_after_transformation)
 
+    def export(self):
+        engine = 'xlsxwriter' # or 'openpyxl', 'xlwt'
+        writer = pd.ExcelWriter(self.output, engine=engine)
+        self.rpm.to_excel(writer, index=False)
+        writer.close()
+        #self.rpm.to_excel(self.output, index=False)
+
+    def log(self, file_name):
+        ts = datetime.now()
+        ts = ts.strftime('%Y-%m-%d %H:%M:%S')
+        lvar = str(len(self.rpm))
+        with open(file_name, "a+") as file_object:
+            file_object.write(ts)
+            file_object.write(",")
+            file_object.write(lvar)
+            file_object.write("\n")
+
+"""
+Definitions ends here
+"""
 
 reporte = ReporteUM()
+time_0 = datetime.now().time()
+print('time_0: ', time_0)
+
 reporte.upload()
+time_1 = datetime.now().time()
+print('time_1: ', time_1)
+
+reporte.keep_month(2)
+time_2 = datetime.now().time()
+print('time_2: ', time_2)
+
 reporte.transform()
+time_3 = datetime.now().time()
+print('time_3: ', time_3)
+
 reporte.merge()
+time_4 = datetime.now().time()
+print('time_4: ', time_4)
+
 reporte.export()
+time_5 = datetime.now().time()
+print('time_5: ', time_5)
 
 
-#print("--- first 5 rows ---")
-#print(rp.head(5))
-#print("--- row x col ---")
-#print(rp.shape)
-#print("---- casting id_pedido to str ----")
-
-#print("--- rp col types ---")
-#print(rp.dtypes.head(3))
-
-#print("---- printing booled series ----")
-#print(bool_rp.head(5))
-#print("---- adding contactid as column not only index or row name ----")
-
-"""
-
-#merge data frames
-print("--- merging dataframes ---")
-rpm = pd.merge(rp, rp10[['contactid', 'id_pedido']], on='contactid', how = 'left')
-rpm = rpm.drop('id_pedido_x', axis = 1)
-rpm = rpm.rename({'id_pedido_y':'id_pedido'}, axis = 1)
-rpm['id_pedido'] = rpm['id_pedido'].fillna(rp['id_pedido'])
-rpm = rpm.replace(np.nan, '', regex=True)
-#print(rpm)
-
-#remove rows with non numeric values at id_pedido
-rgx = r'\D'
-filter = rpm['id_pedido'].str.contains(rgx)
-rpm = rpm[~filter]
-#print(rpm)
-
-rpm.to_excel(output, index=False)
+reporte.log("log.csv")  
+time_6 = datetime.now().time()
+print('time_6: ', time_6)
 
 
 
-# paso 1: filtra "fec_registro" = today
-# later
-
-# tarea: id_pedido tiene registros con 53 y 54, deben ser reemplazados por los valores que inician con 10
-#search = 10
-
-
-# la llave a usarse es "contact_id" para encontrar y reemplazar.
-# los valores no se eliminan
-# se mantienen los pedidos duplicados con el mismo id_pedido 
-# valores de id_pedido con 0 o vacios permanecen en la tabla
-# los duplicados se encuentran en la columna id_pedido
-# eliminar id_pedido con valores no numericos
-
-"""
