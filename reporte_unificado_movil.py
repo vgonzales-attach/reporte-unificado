@@ -62,13 +62,13 @@ class ReporteUM:
 
     def merge(self):
         self.rpm = pd.merge(self.rp, self.rp10[['contactid', 'id_pedido']], on='contactid', how = 'left')
-        self.rpm = self.rpm.drop('id_pedido_x', axis = 1)
-        self.rpm = self.rpm.rename({'id_pedido_y':'id_pedido'}, axis = 1)
-        self.rpm['id_pedido'] = self.rpm['id_pedido'].fillna(self.rp['id_pedido'])
+        #self.rpm = self.rpm.drop('id_pedido_x', axis = 1)
+        #self.rpm = self.rpm.rename({'id_pedido_y':'id_pedido'}, axis = 1)
+        self.rpm['id_pedido_y'] = self.rpm['id_pedido_y'].fillna(self.rp['id_pedido'])
         self.rpm = self.rpm.replace(np.nan, '', regex=True)
-        rgx = r'\D'
-        filter = self.rpm['id_pedido'].str.contains(rgx)
-        self.rpm = self.rpm[~filter]
+        rgx = r'\w+[\d@]\w+|^$|nan'
+        filter = self.rpm['id_pedido_y'].str.contains(rgx)
+        self.rpm = self.rpm[filter]
         shape_after_transformation = self.rpm.shape
         print('after transformation: ', shape_after_transformation)
 
@@ -117,10 +117,6 @@ reporte.export()
 time_5 = datetime.now().time()
 print('time_5: ', time_5)
 
-
 reporte.log("log.csv")  
 time_6 = datetime.now().time()
 print('time_6: ', time_6)
-
-
-
