@@ -126,8 +126,8 @@ for file in files:
     time_2 = datetime.now().time()
     print('time_2: ', time_2)
 
-    # reporte.filter_by_month(2)
-    reporte.filter_by_month(datetime.now().month)
+    reporte.filter_by_month(2)
+    # reporte.filter_by_month(datetime.now().month)
     time_3 = datetime.now().time()
     print('time_3: ', time_3)
 
