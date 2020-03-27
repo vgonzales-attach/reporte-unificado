@@ -72,9 +72,8 @@ class ReporteUM:
         self.search = "10"
         self.bool_rp = self.rp["id_pedido"].str.startswith(
             self.search, na=False)
-        # print(self.bool_rp)
         self.rp10 = self.rp[self.bool_rp]
-        # print(self.rp10)
+        self.merge()
 
     def merge(self):
         self.rpm = pd.merge(
@@ -94,6 +93,7 @@ class ReporteUM:
         writer = pd.ExcelWriter(self.output, engine=engine)
         self.rpm.to_excel(writer, index=False)
         writer.close()
+        print('export: ', 'done')
         #self.rpm.to_excel(self.output, index=False)
 
     def log(self, file_name):
@@ -105,6 +105,7 @@ class ReporteUM:
             file_object.write(",")
             file_object.write(lvar)
             file_object.write("\n")
+        print('log: ', 'done')
 
 
 """
@@ -134,14 +135,10 @@ for file in files:
     time_4 = datetime.now().time()
     print('time_4: ', time_4)
 
-    reporte.merge()
+    reporte.export()
     time_5 = datetime.now().time()
     print('time_5: ', time_5)
 
-    reporte.export()
+    reporte.log("log.csv")
     time_6 = datetime.now().time()
     print('time_6: ', time_6)
-
-    reporte.log("log.csv")
-    time_7 = datetime.now().time()
-    print('time_7: ', time_7)

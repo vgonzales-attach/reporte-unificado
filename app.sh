@@ -11,7 +11,7 @@
  # not used here yet datatable requires python3.7+
 
 
-mv REPORTE_UNIFICADO_MOVIL*xlsx REPORTE_UNIFICADO_MOVIL.xlsx
+# mv REPORTE_UNIFICADO_MOVIL*xlsx REPORTE_UNIFICADO_MOVIL.xlsx
 
 # run anywhere
-PYTHONIOENCODING=utf-8 python3.8 reporte_unificado_movil.py
+PYTHONIOENCODING=utf-8 python reporte_unificado_movil.py
