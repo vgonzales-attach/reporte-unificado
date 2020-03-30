@@ -14,4 +14,13 @@
 # mv REPORTE_UNIFICADO_MOVIL*xlsx REPORTE_UNIFICADO_MOVIL.xlsx
 
 # run anywhere
+# PYTHONIOENCODING=utf-8 python reporte_unificado_movil.py
+
+
+pip install virtualenv
+virtualenv venv
+source venv/Scripts/activate
+pip install -r requirements.txt
 PYTHONIOENCODING=utf-8 python reporte_unificado_movil.py
+echo 'PRESS [ENTER] TO EXIT'
+read junk
