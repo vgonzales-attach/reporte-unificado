@@ -6,32 +6,6 @@ import xlsxwriter
 import glob
 import re
 
-"""
-import datatable as dt
-https://datatable.readthedocs.io/en/latest/quick-start.html
-
-csv_file = "REPORTE_UNIFICADO_MOVIL.csv"
-excel_file = "REPORTE_UNIFICADO_MOVIL.xlsx"
-sheet = "UNIFICADO_MOVIL"
-
-
-if os.path.isfile(csv_file):
-    rp = dt.fread(csv_file)
-    print("csv imported as rp")
-elif os.path.isfile(excel_file):
-    rp = pd.read_excel(excel_file, index_col=0, sheet_name=sheet)
-    rp = dt.Frame(rp)
-    print("xlsx imported as rp")
-else:
-    print("no data file has been found")
-
-print(type(rp))
-"""
-
-shape_before_transformation = []
-shape_current_month = []
-shape_after_transformation = []
-
 
 class ReporteUM:
     def __init__(self, file):
@@ -43,24 +17,16 @@ class ReporteUM:
 
     def upload(self):
         if os.path.isfile(self.input):
-            self.rp = pd.read_excel(
-                self.input, index_col=0, sheet_name=self.sheet)
+            self.rp = pd.read_excel(self.input, index_col=0, sheet_name=self.sheet)
             self.rp = self.rp.reset_index()
+            self.rp = self.rp.replace(np.nan, '', regex=True)  # NaN to empty string
+            self.rp["id_pedido"] = self.rp["id_pedido"].astype(str)
             print("xlsx imported as rp")
             # print(type(self.rp))
             shape_before_transformation = self.rp.shape
             print('before transformation: ', shape_before_transformation)
         else:
             print("no data file in root.")
-
-    def clean(self):
-        self.rp = self.rp.replace(
-            np.nan, '', regex=True)  # NaN to empty string
-        self.rp["id_pedido"] = self.rp["id_pedido"].astype(str)
-        filter = self.rp["id_pedido"].str.contains("[A-Za-z]", na=False)
-        self.rp = self.rp[filter == False]  # Lo opuesto al filtro
-        shape_clean_data = self.rp.shape
-        print('clean data:', shape_clean_data)
 
     def filter_by_month(self, mo):
         filter = self.rp["fec_registro"].dt.month.isin([mo])
@@ -70,23 +36,27 @@ class ReporteUM:
 
     def transform(self):
         self.search = "10"
-        self.bool_rp = self.rp["id_pedido"].str.startswith(
-            self.search, na=False)
+        self.bool_rp = self.rp["id_pedido"].str.startswith(self.search, na=False)
         self.rp10 = self.rp[self.bool_rp]
         self.merge()
 
     def merge(self):
-        self.rpm = pd.merge(
-            self.rp, self.rp10[['contactid', 'id_pedido']], on='contactid', how='left')
+        self.rpm = pd.merge(self.rp, self.rp10[['contactid', 'id_pedido']], on='contactid', how='left')
         #self.rpm = self.rpm.drop('id_pedido_x', axis = 1)
         #self.rpm = self.rpm.rename({'id_pedido_y':'id_pedido'}, axis = 1)
-        self.rpm['id_pedido_y'] = self.rpm['id_pedido_y'].fillna(
-            self.rp['id_pedido'])
-        # rgx = r'\w+[\d@]\w+|^$|nan'
-        # filter = self.rpm['id_pedido_y'].str.contains(rgx)
-        # self.rpm = self.rpm[filter]
+        self.rpm['id_pedido_y'] = self.rpm['id_pedido_y'].replace('', np.nan, inplace=True)
+        self.rpm['id_pedido_y'] = self.rpm['id_pedido_y'].fillna(self.rpm['id_pedido_x'])
+        self.rpm['id_pedido_y'] = self.rpm['id_pedido_y'].replace(np.nan, '', regex=True)  # NaN to empty string
+        self.rpm = self.rpm.rename({'id_pedido_y':'id_pedido'}, axis = 1)
+        self.rpm = self.rpm.rename({'id_pedido_x':'id_pedido__'}, axis = 1)
         shape_after_transformation = self.rpm.shape
         print('after transformation: ', shape_after_transformation)
+    
+    def clean(self):
+        filter = self.rpm['id_pedido'].str.contains('[A-Za-z]', na=False)
+        self.rpm = self.rpm[filter == False]  # Lo opuesto al filtro
+        shape_clean_data = self.rpm.shape
+        print('clean data:', shape_clean_data)
 
     def export(self):
         engine = 'xlsxwriter'  # or 'openpyxl', 'xlwt'
@@ -121,17 +91,17 @@ for file in files:
     reporte.upload()
     time_1 = datetime.now().time()
     print('time_1: ', time_1)
-
-    reporte.clean()
+    
+    reporte.filter_by_month(2)  # number of month
+    # reporte.filter_by_month(datetime.now().month)
     time_2 = datetime.now().time()
     print('time_2: ', time_2)
 
-    reporte.filter_by_month(2) # number of month
-    # reporte.filter_by_month(datetime.now().month)
+    reporte.transform()
     time_3 = datetime.now().time()
     print('time_3: ', time_3)
-
-    reporte.transform()
+    
+    reporte.clean()
     time_4 = datetime.now().time()
     print('time_4: ', time_4)
 
@@ -139,6 +109,6 @@ for file in files:
     time_5 = datetime.now().time()
     print('time_5: ', time_5)
 
-    reporte.log("log.csv")
-    time_6 = datetime.now().time()
-    print('time_6: ', time_6)
+    # reporte.log("log.csv")
+    # time_6 = datetime.now().time()
+    # print('time_6: ', time_6)
